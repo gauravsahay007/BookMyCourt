@@ -20,7 +20,7 @@ const bookingSchema = new mongoose.Schema({
 });
 
 // Middleware to update updatedAt before saving a document
-bookingSchema.pre('save', function(next) {
+bookingSchema.pre('save', function(next) { 
     this.updatedAt = Date.now();
     next();
 });

@@ -1,3 +1,5 @@
+const mongoose = require('mongoose');
+
 // Define the schema for a Court model
 const courtSchema = new mongoose.Schema({
     name: { type: String, required: true }, // Court name is required
