@@ -26,5 +26,9 @@ router.put('/booking/update/:bookingId/:userId', isSignedIn, isAuthenticated, up
 // Route to delete a booking (user only)
 router.delete('/booking/remove/:bookingId/:userId', isSignedIn, isAuthenticated, deleteBooking);
 
+// Route to get bookings for a specific centre, sport, and date
+router.get('/booking/get/:userId', isSignedIn, isAuthenticated, getBookingsByCentreSportAndDate);
+
+
 // Ensure this is the last line
 module.exports = router;
