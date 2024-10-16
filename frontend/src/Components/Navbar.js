@@ -54,7 +54,7 @@ const NavbarLayout = () => {
                     <li
                     className="py-2 hover:bg-gray-700 px-2 rounded cursor-pointer"
                     onClick={() => navigate('/manage-centre')}
-                  >Manage Bookings</li>
+                  >Manage Centre</li>
                     <li className="py-2 hover:bg-gray-700 px-2 rounded">
                       <Link to="/manage-sports">Manage Sports</Link>
                     </li>
