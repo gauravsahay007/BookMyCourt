@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-import { getBookingsForDate } from '../Api/Bookings'; // API to get bookings
+import { getBookingsForDate } from '../Api/Bookings'; // Updated API function
 import { getAllCourts } from '../Api/Court'; // API to get all courts
 import { format } from 'date-fns'; // For formatting dates
 
-const Schedule = () => {
+const Schedule = ({ centreId }) => {
   const [bookings, setBookings] = useState([]);
   const [courts, setCourts] = useState([]);
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -30,7 +30,7 @@ const Schedule = () => {
       setLoading(true);
       try {
         const formattedDate = format(selectedDate, 'yyyy-MM-dd');
-        const data = await getBookingsForDate(formattedDate);
+        const data = await getBookingsForDate(formattedDate, centreId); // Pass centreId to API
         setBookings(data);
       } catch (error) {
         console.error('Error fetching bookings:', error);
@@ -39,8 +39,9 @@ const Schedule = () => {
         setLoading(false);
       }
     };
+
     fetchBookings();
-  }, [selectedDate]);
+  }, [selectedDate, centreId]); // Depend on centreId as well
 
   // Filter the bookings for each court based on time
   const getBookingsForCourt = (courtId) => {
@@ -85,9 +86,7 @@ const Schedule = () => {
                         {`${booking.timeSlot.startTime} - ${booking.timeSlot.endTime}`}
                       </td>
                       <td
-                        className={`border border-gray-300 p-2 text-center ${
-                          getBookingColor(booking.status)
-                        }`}
+                        className={`border border-gray-300 p-2 text-center ${getBookingColor(booking.status)}`}
                       >
                         <div>{booking.userId.username}</div>
                       </td>

@@ -67,6 +67,19 @@ const Signin = () => {
       <div className="w-full max-w-md bg-white p-8 rounded-lg shadow-lg">
         <h2 className="text-2xl font-bold text-center mb-6">Sign In</h2>
 
+        {/* Display test credentials */}
+        <div className="bg-yellow-100 p-4 rounded-lg mb-4">
+          <p className="text-sm text-gray-700">
+            <strong>Test Credentials:</strong>
+          </p>
+          <p className="text-sm text-gray-700">
+            <strong>Operations Team Member:</strong> admin@test.com / iiita123
+          </p>
+          <p className="text-sm text-gray-700">
+            <strong>Normal User:</strong> user@test.com / iiita123
+          </p>
+        </div>
+
         {/* Display error message if present */}
         {error && <p className="text-red-500">{error}</p>}
 

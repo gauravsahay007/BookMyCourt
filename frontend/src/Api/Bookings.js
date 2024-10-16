@@ -133,10 +133,11 @@ export const deleteBooking = async (bookingId) => {
   }
 };
 
-export const getBookingsForDate = async (date) => {
+export const getBookingsForDate = async (date, centreId) => {
   try {
     const response = await axios.get(`${API_URL}/api/booking/getBydate`, {
       params: { date },
+      data: { centreId }, // Send centreId in the request body
     });
     return response.data;
   } catch (error) {

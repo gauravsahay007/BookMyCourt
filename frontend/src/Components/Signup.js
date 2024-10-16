@@ -1,13 +1,14 @@
-import React, { useState } from 'react';
-import { signup, authenticate, isAuthenticated } from '../Api/Auth'; // Import necessary functions
-import { toast, ToastContainer } from 'react-toastify'; // Import react-toastify
-import 'react-toastify/dist/ReactToastify.css'; // Import react-toastify CSS
-import { Navigate } from 'react-router-dom'; // For redirection
+import React, { useState, useEffect } from 'react';
+import { signup, authenticate, isAuthenticated } from '../Api/Auth';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import { useNavigate } from 'react-router-dom';
 
 const Signup = () => {
   const [formData, setFormData] = useState({ username: '', email: '', password: '' });
   const [error, setError] = useState('');
   const [redirect, setRedirect] = useState(false);
+  const navigate = useNavigate(); // Initialize navigate
 
   // Handle form field changes
   const handleChange = (e) => {
@@ -17,50 +18,36 @@ const Signup = () => {
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // Make API call to signup
     const result = await signup(formData);
 
     if (result.error) {
-      const errorMessage = result.error.errors?.message || 'An error occurred.';
+      const errorMessage = result.error.message || 'An error occurred.';
       setError(errorMessage);
-      toast.error(errorMessage, {
+      toast.error(errorMessage, { position: 'top-right', autoClose: 3000 });
+    } else {
+      setError('');
+      authenticate(result, () => {
+        setTimeout(() => setRedirect(true), 1000); // Redirect after a delay
+      });
+      toast.success('Signup successful! Redirecting to Dashboard...', {
         position: 'top-right',
         autoClose: 3000,
       });
-    } else {
-      setError('');
-
-      // Store user data using authenticate function (optional, if needed)
-      authenticate(result, () => {
-        setRedirect(true); // Trigger redirect after successful signup
-      });
-
-      // Show success toast message
-      toast.success('Signup successful! Redirecting to Dashboard...', {
-        position: 'top-right',
-        autoClose: 3000, // Close after 3 seconds
-      });
     }
   };
 
-  // Handle redirection after successful signup
-  const performRedirect = () => {
-    if (redirect) {
-      return <Navigate to="/" />; // Redirect to Dashboard after signup
+  // Handle redirection using useEffect
+  useEffect(() => {
+    if (isAuthenticated() || redirect) {
+      navigate('/'); // Redirect to Dashboard if authenticated
     }
-
-    if (isAuthenticated()) {
-      return <Navigate to="/" />; // If already authenticated, redirect to home or dashboard
-    }
-  };
+  }, [redirect, navigate]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <div className="w-full max-w-md bg-white p-8 rounded-lg shadow-lg">
         <h2 className="text-2xl font-bold text-center mb-6">Sign Up</h2>
 
-        {/* Display error message if present */}
         {error && <p className="text-red-500">{error}</p>}
 
         <form onSubmit={handleSubmit}>
@@ -116,12 +103,8 @@ const Signup = () => {
             Sign Up
           </button>
         </form>
-
-        {/* Perform redirection after successful signup */}
-        {performRedirect()}
       </div>
 
-      {/* ToastContainer for displaying toasts */}
       <ToastContainer />
     </div>
   );

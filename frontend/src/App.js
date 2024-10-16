@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Route, Routes, useNavigate } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, useNavigate, useLocation } from 'react-router-dom';
 import NavbarLayout from './Components/Navbar';
 import Schedule from './Components/Schedule';
 import UserSchedule from './Components/UserSchedule'; // Import UserSchedule component
@@ -17,51 +17,56 @@ import ManageBookings from './Components/ManageBooking';
 function App() {
   const { state, setState } = useData();
   const navigate = useNavigate(); // Initialize the navigate hook
+  const location = useLocation(); // Hook to track the current route
 
-  // Redirect to /signin if no JWT token is found
+  // Check for JWT token on mount
   useEffect(() => {
     const jwt = localStorage.getItem('jwt');
+
     if (!jwt) {
-      navigate('/signin'); // Redirect to /signin
+      navigate('/signin', { replace: true });
     }
-  }, [navigate]); // Add navigate to dependencies
+  }, [navigate]);
 
-  // Fetch registered centre details on component mount
-  useEffect(() => {
-    const fetchRegisteredCentre = async () => {
-      const userId = JSON.parse(localStorage.getItem('jwt'))?.user?._id;
-      const userRole = JSON.parse(localStorage.getItem('jwt'))?.user?.role;
+  // Function to fetch the registered centre details
+  const fetchRegisteredCentre = async () => {
+    const userId = JSON.parse(localStorage.getItem('jwt'))?.user?._id;
+    const userRole = JSON.parse(localStorage.getItem('jwt'))?.user?.role;
 
-      if (userId) {
-        try {
-          const resp = await getUserRegisteredCentre(userId);
-          console.log(resp);
+    if (userId) {
+      try {
+        const resp = await getUserRegisteredCentre(userId);
+        console.log(resp);
 
-          if (resp.registeredCentre) {
-            setState((prevState) => ({
-              ...prevState,
-              centreId: resp.registeredCentre._id,
-              userRole: userRole, // Store the user role in the state
-            }));
-            // Store the centreId and role in localStorage
-            localStorage.setItem('centreId', resp.registeredCentre._id);
-            localStorage.setItem('userRole', userRole);
-          }
-        } catch (error) {
-          console.error('Failed to fetch registered centre:', error);
+        if (resp.registeredCentre) {
+          setState((prevState) => ({
+            ...prevState,
+            centreId: resp.registeredCentre._id,
+            userRole: userRole,
+          }));
+
+          localStorage.setItem('centreId', resp.registeredCentre._id);
+          localStorage.setItem('userRole', userRole);
         }
+      } catch (error) {
+        console.error('Failed to fetch registered centre:', error);
       }
-    };
+    }
+  };
 
-    fetchRegisteredCentre();
-  }, [state.centreId, setState]); // Add setState to dependencies
+  // Call fetchRegisteredCentre whenever the user navigates to the "/" route
+  useEffect(() => {
+    if (location.pathname === '/') {
+      fetchRegisteredCentre();
+    }
+  }, [location, setState]); // Run whenever the location changes
 
   const userRole = JSON.parse(localStorage.getItem('jwt'))?.user?.role;
 
   return (
     <Routes>
-      <Route path="signin" element={<Signin />} />
-      <Route path="signup" element={<Signup />} />
+      <Route path="/signin" element={<Signin />} />
+      <Route path="/signup" element={<Signup />} />
 
       {/* Dashboard layout will be persistent */}
       <Route path="/" element={<NavbarLayout />}>
