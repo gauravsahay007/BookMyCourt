@@ -6,7 +6,7 @@ const getSportById = async (req, res, next) => {
     const { sportId } = req.params;
 
     try {
-        const sport = await Sport.findById(sportId).populate('centreId'); // Populate related centre details
+        const sport = await Sport.findById(sportId).populate('centre'); // Populate related centre details
         if (!sport) {
             return res.status(404).json({ message: 'Sport not found.' });
         }
@@ -28,15 +28,24 @@ const addSport = async (req, res) => {
     }
 
     try {
-        const newSport = new Sport({ name, description, centre, image });
+        // Create a new sport with the initial centreId
+        const newSport = new Sport({
+            name,
+            description,
+            centre,
+            image,
+            centres: [centre], // Initialize the centres array with the given centreId
+        });
+
         const savedSport = await newSport.save();
 
-        // Add the new sport to the Centre's sports array
+        // Add the new sport to the related Centre's sports array
         await Centre.findByIdAndUpdate(
             centre,
             { $addToSet: { sports: savedSport._id } }, // Use $addToSet to avoid duplicates
             { new: true }
         );
+
         res.status(201).json(savedSport); // Return success response
     } catch (error) {
         console.error('Error adding sport:', error);
@@ -44,14 +53,20 @@ const addSport = async (req, res) => {
     }
 };
 
-// Controller function to get all sports
+// Controller function to get all sports for a specific centre
 const getAllSports = async (req, res) => {
+    const { centreId } = req.body;  // Extract centreId from the request body
+
+    if (!centreId) {
+        return res.status(400).json({ message: 'Centre ID is required to fetch sports.' });
+    }
+
     try {
-        const sports = await Sport.find().populate('centre'); // Populate related centre details
-        res.json(sports); // Return all sports
+        const sports = await Sport.find({ centres: centreId }).populate('centre'); // Find sports by centreId
+        res.json(sports); // Return the list of sports
     } catch (error) {
         console.error('Error fetching sports:', error);
-        res.status(500).json({ message: 'Server error, please try again later.' });
+        res.status(500).json({ message: 'Failed to fetch sports.' });
     }
 };
 
@@ -61,13 +76,11 @@ const updateSport = async (req, res) => {
     const { name, description, centre, image } = req.body;
 
     try {
-        // Update the sport by ID and return the updated document
-        const updatedSport = await Sport.findByIdAndUpdate(sportId, {
-            name,
-            description,
-            centre,
-            image
-        }, { new: true });
+        const updatedSport = await Sport.findByIdAndUpdate(
+            sportId,
+            { name, description, centre, image },
+            { new: true }
+        );
 
         if (!updatedSport) {
             return res.status(404).json({ message: 'Sport not found.' });
@@ -85,7 +98,6 @@ const deleteSport = async (req, res) => {
     const { sportId } = req.params;
 
     try {
-        // Delete the sport by ID
         const deletedSport = await Sport.findByIdAndDelete(sportId);
         if (!deletedSport) {
             return res.status(404).json({ message: 'Sport not found.' });

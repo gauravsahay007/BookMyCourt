@@ -9,35 +9,40 @@ const { expressjwt: expressJwt } = require("express-jwt");
 const { check, validationResult } = require("express-validator");
 
 // User signup logic
-exports.signup = (req, res) => {
+exports.signup = async (req, res) => {
     const errors = validationResult(req);
-
+  
     // Return error if validation fails
     if (!errors.isEmpty()) {
-        return res.status(422).json({
-            error: errors.array()[0].msg
-        });
+      return res.status(422).json({
+        error: errors.array()[0].msg,
+      });
     }
-
-    // Create a new user with the request body data
-    const user = new User(req.body);
-
-    // Save the user to the database
-    user.save().then((user, err) => {
-        if (err || !user) {
-            return res.status(400).json({
-                err: "Not able to save user in DATABASE"
-            });
-        }
-        // Return basic user info if successfully saved
-        res.json({
-            name: user.name,
-            email: user.email,
-            id: user._id
-        });
-    });
-};
-
+  
+    try {
+      // Create a new user
+      const user = new User(req.body);
+      const savedUser = await user.save(); // Save user to DB
+  
+      // Generate a JWT token immediately upon signup (optional)
+      const token = jwt.sign({ _id: savedUser._id }, process.env.SECRET);
+  
+      // Store token in cookie (optional)
+      res.cookie("token", token, { expire: new Date() + 9999 });
+  
+      // Return token and basic user info
+      const { _id, name, email, role } = savedUser;
+      return res.json({
+        token,
+        user: { _id, name, email, role },
+      });
+    } catch (error) {
+      console.error("Error saving user:", error);
+      return res.status(400).json({
+        error: "Not able to save user in DATABASE",
+      });
+    }
+  };
 // User signin logic
 exports.signin = (req, res) => {
     const errors = validationResult(req);

@@ -14,7 +14,7 @@ router.post("/signup", [
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() }); 
-    }
+    } 
     // Call the signup controller function if validation passes
     signup(req, res, next);
 });

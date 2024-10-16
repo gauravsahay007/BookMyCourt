@@ -1,29 +1,29 @@
 const Court = require('../models/Court'); // Import the Court model
 const Sport = require('../models/Sport'); // Import the Sport model if needed
 
+
 // Controller function to add a new court
 const addCourt = async (req, res) => {
-    const { name, sportId, availability } = req.body;
+  const { name, sportId, centre, availability } = req.body;
 
-    // Validate required fields
-    if (!name || !sportId) {
-        return res.status(400).json({ message: 'Name and Sport ID are required.' });
-    }
+  // Validate required fields
+  if (!name || !sportId || !centre) {
+    return res.status(400).json({ message: 'Name, Sport ID, and Centre ID are required.' });
+  }
 
-    try {
-        const newCourt = new Court({
-            name,
-            sportId,
-            availability: availability || [], // If availability is not provided, default to an empty array
-        });
-
-        // Save the new court to the database
-        const savedCourt = await newCourt.save();
-        res.status(201).json(savedCourt); // Return success response
-    } catch (error) {
-        console.error('Error adding court:', error);
-        res.status(500).json({ message: 'Server error, please try again later.' });
-    }
+  try {
+    const newCourt = new Court({
+      name,
+      sportId,
+      centre,
+      availability: availability || [], // Default to an empty array if not provided
+    });
+    const savedCourt = await newCourt.save();   
+    res.status(201).json(savedCourt); // Return success response
+  } catch (error) {
+    console.error('Error adding court:', error);
+    res.status(500).json({ message: 'Server error, please try again later.' });
+  }
 };
 
 // Controller function to get all courts

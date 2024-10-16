@@ -22,6 +22,7 @@ const userSchema = new mongoose.Schema({
         type: Number,
         default: 0
        },
+    registeredCentre: {type: mongoose.Schema.Types.ObjectId, ref: 'Centre', default: null }
 });
 
 // Custom methods
