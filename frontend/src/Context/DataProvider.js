@@ -3,7 +3,7 @@ import React, { createContext, useContext, useState } from "react";
 
 // Define initial state for the context
 const data = {
-   
+   centreId : null
 };
 
 // Create the context
