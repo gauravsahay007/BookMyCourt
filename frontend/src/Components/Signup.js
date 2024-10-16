@@ -108,6 +108,6 @@ const Signup = () => {
       <ToastContainer />
     </div>
   );
-};
+}; 
 
 export default Signup;

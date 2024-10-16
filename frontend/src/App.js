@@ -59,7 +59,39 @@ function App() {
     if (location.pathname === '/') {
       fetchRegisteredCentre();
     }
-  }, [location, setState]); // Run whenever the location changes
+  }, [location, setState, state]); // Run whenever the location changes
+
+  const fetchRegisteredCentre = async () => {
+    const userId = JSON.parse(localStorage.getItem('jwt'))?.user?._id;
+    const userRole = JSON.parse(localStorage.getItem('jwt'))?.user?.role;
+
+    if (userId) {
+      try {
+        const resp = await getUserRegisteredCentre(userId);
+        console.log(resp);
+
+        if (resp.registeredCentre) {
+          setState((prevState) => ({
+            ...prevState,
+            centreId: resp.registeredCentre._id,
+            userRole: userRole,
+          }));
+
+          localStorage.setItem('centreId', resp.registeredCentre._id);
+          localStorage.setItem('userRole', userRole);
+        }
+      } catch (error) {
+        console.error('Failed to fetch registered centre:', error);
+      }
+    }
+  };
+
+  // Call fetchRegisteredCentre whenever the user navigates to the "/" route
+  useEffect(() => {
+    if (location.pathname === '/') {
+      fetchRegisteredCentre();
+    }
+  }, []);
 
   const userRole = JSON.parse(localStorage.getItem('jwt'))?.user?.role;
 
