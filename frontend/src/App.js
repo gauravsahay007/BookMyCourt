@@ -91,6 +91,11 @@ function App() {
     if (location.pathname === '/') {
       fetchRegisteredCentre();
     }
+  }, [location, setState, state]);
+  useEffect(() => {
+   
+      fetchRegisteredCentre();
+    
   }, []);
 
   const userRole = JSON.parse(localStorage.getItem('jwt'))?.user?.role;

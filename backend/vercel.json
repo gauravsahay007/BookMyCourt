@@ -10,8 +10,4 @@
       { "src": "/(.*)", "dest": "index.js" } 
     ]
   }
-<<<<<<< HEAD
   
-=======
-  
->>>>>>> 05a759ce5ad8fe7dce4c0267fd1a93b8ff1b857a
