@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, Navigate } from 'react-router-dom'; // Import Link for navigation
+import { Link, useNavigate } from 'react-router-dom'; // Import useNavigate
 import { signin, authenticate, isAuthenticated } from '../Api/Auth'; // Import functions from API
 import { toast, ToastContainer } from 'react-toastify'; // Import toast notifications
 import 'react-toastify/dist/ReactToastify.css'; // Import toast CSS
@@ -8,7 +8,8 @@ const Signin = () => {
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
-  const [redirect, setRedirect] = useState(false);
+
+  const navigate = useNavigate(); // Initialize useNavigate hook
 
   // Get authenticated user info
   const { user } = isAuthenticated();
@@ -35,36 +36,31 @@ const Signin = () => {
 
       // Store user data in localStorage using the authenticate function
       authenticate(result, () => {
-        setRedirect(true); // Set redirect to true after successful authentication
-      });
+        // Redirect after successful authentication
+        if (result.user.role === 1) {
+          navigate('/'); // Redirect to admin dashboard if role is 1
+        } else {
+          navigate('/'); // Redirect to user dashboard if role is 0
+        }
 
-      // Show success toast message
-      toast.success('Signin successful!', {
-        position: 'top-right',
-        autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
+        // Show success toast message
+        toast.success('Signin successful!', {
+          position: 'top-right',
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+        });
       });
     }
   };
 
-  // Handle redirection based on authentication status
-  const performRedirect = () => {
-    if (redirect) {
-      if (user && user.role === 1) {
-        return <Navigate to="/" />; // Redirect to admin dashboard if user role is 1
-      } else {
-        return <Navigate to="/" />; // Redirect to user dashboard if role is 0
-      }
-    }
-
-    if (isAuthenticated()) {
-      return <Navigate to="/" />;
-    }
-  };
+  // Redirect if already authenticated
+  if (isAuthenticated()) {
+    navigate('/'); // Redirect to dashboard if already logged in
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
@@ -122,9 +118,6 @@ const Signin = () => {
             </Link>
           </p>
         </div>
-
-        {/* Perform redirection based on user authentication */}
-        {performRedirect()}
       </div>
 
       {/* ToastContainer for displaying toasts */}
