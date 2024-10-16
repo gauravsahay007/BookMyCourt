@@ -1,77 +1,134 @@
 import React, { useState, useEffect } from 'react';
-import DatePicker from 'react-datepicker'; // Import DatePicker
-import 'react-datepicker/dist/react-datepicker.css'; // Import DatePicker CSS
-import { getBookingsForDate } from '../Api/Bookings'; // Assuming this API exists
-import { format } from 'date-fns'; // For formatting date
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+import { getBookingsForDate } from '../Api/Bookings'; // API to get bookings
+import { getAllCourts } from '../Api/Court'; // API to get all courts
+import { format } from 'date-fns'; // For formatting dates
 
 const Schedule = () => {
   const [bookings, setBookings] = useState([]);
-  const [selectedDate, setSelectedDate] = useState(new Date()); // Default to current date
+  const [courts, setCourts] = useState([]);
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [loading, setLoading] = useState(true);
 
-  // Fetch bookings whenever the selectedDate changes
+  // Fetch courts on component mount
+  useEffect(() => {
+    const fetchCourts = async () => {
+      try {
+        const courtData = await getAllCourts();
+        setCourts(courtData);
+      } catch (error) {
+        console.error('Error fetching courts:', error);
+      }
+    };
+    fetchCourts();
+  }, []);
+
+  // Fetch bookings when the selected date changes
   useEffect(() => {
     const fetchBookings = async () => {
-      const formattedDate = format(selectedDate, 'yyyy-MM-dd'); // Format date for API
-      const data = await getBookingsForDate(formattedDate);
-      setBookings(data);
+      setLoading(true);
+      try {
+        const formattedDate = format(selectedDate, 'yyyy-MM-dd');
+        const data = await getBookingsForDate(formattedDate);
+        setBookings(data);
+      } catch (error) {
+        console.error('Error fetching bookings:', error);
+        setBookings([]);
+      } finally {
+        setLoading(false);
+      }
     };
-
     fetchBookings();
   }, [selectedDate]);
 
-  // Render the schedule grid
+  // Filter the bookings for each court based on time
+  const getBookingsForCourt = (courtId) => {
+    return bookings.filter((booking) => booking.courtId._id === courtId);
+  };
+
   return (
-    <div className="p-4">
-      <h2 className="text-2xl font-bold mb-4">Schedule</h2>
+    <div className="p-6 bg-gray-50 min-h-screen">
+      <h2 className="text-4xl font-bold mb-6 text-center">Schedule</h2>
 
       {/* Date Picker */}
-      <div className="flex mb-4 items-center">
+      <div className="flex justify-center mb-8">
         <DatePicker
           selected={selectedDate}
-          onChange={(date) => setSelectedDate(date)} // Update selected date
+          onChange={(date) => setSelectedDate(date)}
           dateFormat="dd MMM yyyy"
-          className="p-2 border rounded-lg"
+          className="p-2 border rounded-lg shadow-sm"
         />
-        <button className="ml-4 p-2 bg-gray-200 rounded-lg">Swimming</button>
-        <button className="ml-2 p-2 bg-gray-200 rounded-lg">Badminton</button>
       </div>
 
-      {/* Schedule Grid */}
-      <div className="grid grid-cols-6 gap-4">
-        {/* Time Slots */}
-        <div className="col-span-1">4 AM</div>
-        <div className="col-span-1">Court 1</div>
-        <div className="col-span-1">Court 2</div>
-        <div className="col-span-1">Court 3</div>
-        <div className="col-span-1">Court 4</div>
-        <div className="col-span-1">Court 5</div>
+      {loading ? (
+        <div className="text-center text-lg">Loading bookings...</div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="table-auto border-collapse border border-gray-300 w-full">
+            <thead>
+              <tr>
+                <th className="border border-gray-300 p-2 text-center">Court</th>
+                <th className="border border-gray-300 p-2 text-center">Time Slot</th>
+                <th className="border border-gray-300 p-2 text-center">Booking</th>
+              </tr>
+            </thead>
+            <tbody>
+              {courts.map((court) => (
+                <React.Fragment key={court._id}>
+                  {getBookingsForCourt(court._id).map((booking) => (
+                    <tr key={booking._id}>
+                      <td className="border border-gray-300 p-2 text-center">
+                        {court.name}
+                      </td>
+                      <td className="border border-gray-300 p-2 text-center">
+                        {`${booking.timeSlot.startTime} - ${booking.timeSlot.endTime}`}
+                      </td>
+                      <td
+                        className={`border border-gray-300 p-2 text-center ${
+                          getBookingColor(booking.status)
+                        }`}
+                      >
+                        <div>{booking.userId.username}</div>
+                      </td>
+                    </tr>
+                  ))}
 
-        {/* Render bookings */}
-        {bookings.map((booking) => (
-          <div key={booking.id} className={`col-span-1 bg-${getBookingColor(booking.status)} p-2 rounded-lg`}>
-            {booking.userName}
-            <div>{booking.status}</div>
-            <div>{booking.items} items</div>
-          </div>
-        ))}
-      </div>
+                  {/* If no bookings, show a placeholder row */}
+                  {getBookingsForCourt(court._id).length === 0 && (
+                    <tr>
+                      <td className="border border-gray-300 p-2 text-center">
+                        {court.name}
+                      </td>
+                      <td className="border border-gray-300 p-2 text-center">-</td>
+                      <td className="border border-gray-300 p-2 text-center">
+                        No booking
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 };
 
-// Helper function to get background color for booking status
+// Helper function to determine the booking color based on status
 const getBookingColor = (status) => {
   switch (status) {
-    case 'Completed':
-      return 'green-200';
-    case 'Pending Payment':
-      return 'red-200';
+    case 'Confirmed':
+      return 'bg-green-300';
     case 'Coaching':
-      return 'blue-200';
+      return 'bg-blue-300';
+    case 'Pending Payment':
+      return 'bg-red-300';
     case 'Blocked':
-      return 'gray-200';
+      return 'bg-gray-300';
     default:
-      return 'yellow-200';
+      return 'bg-yellow-300';
   }
 };
 

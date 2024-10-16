@@ -3,6 +3,16 @@ import axios from 'axios';
 
 const API_URL = process.env.REACT_APP_BACKEND; // Ensure you have your backend URL set in the environment variables
 // Function to add a centre
+export const getAllCentres = async () => {
+  try {
+    const response = await axios.get(`${API_URL}/api/allCentre`);
+    return response.data; // Return the data
+  } catch (error) {
+    console.error('Error fetching centres:', error);
+    throw error;
+  }
+};
+
 export const addCentre = async (centreData) => {
   try {
     // Extract userId from local storage
@@ -37,3 +47,32 @@ export const addCentre = async (centreData) => {
     throw error; // Rethrow the error for handling in the calling function
   }
 };
+
+
+export const getCentreDetails = async (centreId) => {
+  try {
+    const response = await axios.get(`${API_URL}/api/centre/${centreId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching centre details:', error);
+    throw error;
+  }
+};
+
+export const updateCentre = async (centreId, centreData) => {
+  try {
+    const token = JSON.parse(localStorage.getItem("jwt"))?.token; 
+    const userId = JSON.parse(localStorage.getItem("jwt"))?.user?._id;
+    const response = await axios.put(`${API_URL}/api/centre/update/${centreId}/${userId}`, centreData, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error updating centre:', error);
+    throw error;
+  }
+};
+

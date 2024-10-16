@@ -7,7 +7,6 @@ import { Navigate } from 'react-router-dom'; // For redirection
 const Signup = () => {
   const [formData, setFormData] = useState({ username: '', email: '', password: '' });
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
   const [redirect, setRedirect] = useState(false);
 
   // Handle form field changes
@@ -25,10 +24,12 @@ const Signup = () => {
     if (result.error) {
       const errorMessage = result.error.errors?.message || 'An error occurred.';
       setError(errorMessage);
-      setSuccess(false);
+      toast.error(errorMessage, {
+        position: 'top-right',
+        autoClose: 3000,
+      });
     } else {
       setError('');
-      setSuccess(true);
 
       // Store user data using authenticate function (optional, if needed)
       authenticate(result, () => {
@@ -36,14 +37,9 @@ const Signup = () => {
       });
 
       // Show success toast message
-      toast.success('Signup successful! Redirecting to Sign In...', {
+      toast.success('Signup successful! Redirecting to Dashboard...', {
         position: 'top-right',
         autoClose: 3000, // Close after 3 seconds
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
       });
     }
   };
@@ -51,12 +47,11 @@ const Signup = () => {
   // Handle redirection after successful signup
   const performRedirect = () => {
     if (redirect) {
-      return <Navigate to="/signin" />; // Redirect to Sign In page
+      return <Navigate to="/" />; // Redirect to Dashboard after signup
     }
 
-    // If already authenticated, redirect to home or dashboard
     if (isAuthenticated()) {
-      return <Navigate to="/signin" />;
+      return <Navigate to="/" />; // If already authenticated, redirect to home or dashboard
     }
   };
 

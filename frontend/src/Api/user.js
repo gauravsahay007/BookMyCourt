@@ -12,7 +12,6 @@ const getAuthDetails = () => {
 
 // Function to register a centre for a user
 export const registerCentreForUser = async (centreId) => {
-  console.log("hiii")
   try {
     const { token, userId } = getAuthDetails(); // Get token and user ID
 
@@ -57,5 +56,23 @@ export const getUserRegisteredCentre = async (userId) => {
   } catch (error) {
     console.error("Error fetching registered centre:", error);
     throw error; // Rethrow the error for handling in the calling component
+  }
+};
+
+// Function to fetch user bookings from the backend
+export const getUserBookings = async (userId, token) => {
+  try {
+    const response = await axios.get(
+      `${API_URL}/api/user/${userId}/bookings`, // API endpoint
+      {
+        headers: {
+          Authorization: `Bearer ${token}`, // Add the JWT token for authentication
+        },
+      }
+    );
+    return response.data.bookings; // Return the list of bookings
+  } catch (error) {
+    console.error('Error fetching user bookings:', error);
+    throw error.response ? error.response.data : { message: 'Server error' };
   }
 };

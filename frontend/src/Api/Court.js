@@ -1,98 +1,91 @@
-const API_URL = process.env.REACT_APP_BACKEND; // Set your backend URL in .env
+// ../Api/Court.js
+import axios from 'axios';
 
-// Function to get all courts
-export const getCourts = async () => {
-  try {
-    const response = await fetch(`${API_URL}/api/courts`, {
-      method: 'GET',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
-    });
-    const data = await response.json();
-    if (response.ok) {
-      return data; // return the courts data
-    } else {
-      throw new Error(data.error || 'Failed to fetch courts');
-    }
-  } catch (error) {
-    console.error('Error fetching courts:', error);
-    return []; // Return an empty array on error
+const API_URL = process.env.REACT_APP_BACKEND; // Backend URL from environment variables
+
+// Helper function to get token and userId from localStorage
+const getAuthHeaders = () => {
+  const jwt = JSON.parse(localStorage.getItem('jwt'));
+  const userId = jwt?.user?._id;
+  const token = jwt?.token;
+
+  if (!userId || !token) {
+    throw new Error('User ID or token not found in local storage.');
   }
+
+  return { userId, token };
 };
 
 // Function to add a new court
-export const addCourt = async (court) => {
+export const addCourt = async (courtData) => {
   try {
-    const jwt = JSON.parse(localStorage.getItem("jwt")); // Correctly access the JWT
-    if (!jwt) throw new Error("User not authenticated"); // Check for JWT presence
-    const response = await fetch(`${API_URL}/api/court/add/${jwt.user._id}`, {
-      method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${jwt.token}` // Use the token for authentication
-      },
-      body: JSON.stringify(court), // court should have fields like {name: 'Court Name'}
-    });
-    const data = await response.json();
-    if (response.ok) {
-      return data; // return the newly created court
-    } else {
-      throw new Error(data.error || 'Failed to add court');
-    }
+    const { user, token } = JSON.parse(localStorage.getItem('jwt'));
+    const userId = user._id;
+    const response = await axios.post(
+      `${API_URL}/api/court/add/${userId}`,
+      courtData,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    console.log(response);
+    return response.data;
   } catch (error) {
     console.error('Error adding court:', error);
-    return null;
+    throw error;
+  }
+};
+
+// Function to get all courts
+export const getAllCourts = async () => {
+  try {
+    const response = await axios.get(`${API_URL}/api/courts`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching courts:', error);
+    throw error;
   }
 };
 
 // Function to update a court
-export const updateCourt = async (courtId, updatedData) => {
+export const updateCourt = async (courtId, courtData) => {
   try {
-    const jwt = JSON.parse(localStorage.getItem("jwt")); // Correctly access the JWT
-    if (!jwt) throw new Error("User not authenticated"); // Check for JWT presence
-    const response = await fetch(`${API_URL}/api/courts/${courtId}/${jwt.user._id}`, {
-      method: 'PUT',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(updatedData), // {name: 'Updated Court Name'}
-    });
-    const data = await response.json();
-    if (response.ok) {
-      return data; // return the updated court
-    } else {
-      throw new Error(data.error || 'Failed to update court');
-    }
+    const { userId, token } = getAuthHeaders();
+    const response = await axios.put(
+      `${API_URL}/api/court/update/${courtId}/${userId}`,
+      courtData,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    return response.data;
   } catch (error) {
     console.error('Error updating court:', error);
-    return null;
+    throw error;
   }
 };
 
 // Function to delete a court
 export const deleteCourt = async (courtId) => {
   try {
-    const jwt = JSON.parse(localStorage.getItem("jwt")); // Correctly access the JWT
-    if (!jwt) throw new Error("User not authenticated"); // Check for JWT presence
-    const response = await fetch(`${API_URL}/api/courts/${courtId}/${jwt.user._id}`, {
-      method: 'DELETE',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
-    });
-    if (response.ok) {
-      return true; // Successfully deleted
-    } else {
-      const data = await response.json();
-      throw new Error(data.error || 'Failed to delete court');
-    }
+    const { userId, token } = getAuthHeaders();
+    const response = await axios.delete(
+      `${API_URL}/api/court/remove/${courtId}/${userId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    return response.data;
   } catch (error) {
     console.error('Error deleting court:', error);
-    return false;
+    throw error;
   }
 };

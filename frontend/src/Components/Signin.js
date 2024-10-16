@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { signin, authenticate, isAuthenticated } from '../Api/Auth'; // Import the signin, authenticate, and isAuthenticated functions
-import { toast, ToastContainer } from 'react-toastify'; // Import react-toastify
-import 'react-toastify/dist/ReactToastify.css'; // Import react-toastify CSS
-import { Navigate } from 'react-router-dom'; // Import Navigate for redirection
+import { Link, Navigate } from 'react-router-dom'; // Import Link for navigation
+import { signin, authenticate, isAuthenticated } from '../Api/Auth'; // Import functions from API
+import { toast, ToastContainer } from 'react-toastify'; // Import toast notifications
+import 'react-toastify/dist/ReactToastify.css'; // Import toast CSS
 
 const Signin = () => {
   const [formData, setFormData] = useState({ email: '', password: '' });
@@ -54,11 +54,10 @@ const Signin = () => {
   // Handle redirection based on authentication status
   const performRedirect = () => {
     if (redirect) {
-      // Redirect based on user role
       if (user && user.role === 1) {
-        return <Navigate to="/" />;
+        return <Navigate to="/" />; // Redirect to admin dashboard if user role is 1
       } else {
-        return <Navigate to="/" />;
+        return <Navigate to="/" />; // Redirect to user dashboard if role is 0
       }
     }
 
@@ -113,6 +112,16 @@ const Signin = () => {
             Sign In
           </button>
         </form>
+
+        {/* Sign-up Link */}
+        <div className="mt-4 text-center">
+          <p className="text-gray-600">
+            New User?{' '}
+            <Link to="/signup" className="text-blue-500 hover:underline">
+              Sign Up
+            </Link>
+          </p>
+        </div>
 
         {/* Perform redirection based on user authentication */}
         {performRedirect()}

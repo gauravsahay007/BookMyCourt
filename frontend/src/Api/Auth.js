@@ -71,3 +71,16 @@ export const isAuthenticated = () => {
         return false    }
 }
 
+
+// Function to sign out the user
+export const signout = (next) => {
+  if (typeof window !== 'undefined') {
+    // Clear JWT from localStorage
+    localStorage.removeItem('jwt');
+    localStorage.removeItem('centreId');
+    
+    // Call next function if provided
+    next && next();
+
+  }
+};

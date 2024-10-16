@@ -1,62 +1,102 @@
 import React, { useState, useEffect } from 'react';
-import { getCourts, addCourt, updateCourt, deleteCourt } from '../Api/Court'; // Assuming these API methods exist
+import { getAllCourts, addCourt, updateCourt, deleteCourt } from '../Api/Court'; // API for courts
+import { getAllSports } from '../Api/Sport'; // API for sports
+import { getAllCentres } from '../Api/Centre'; // API for centres
 
 const ManageCourts = () => {
   const [courts, setCourts] = useState([]);
-  const [newCourtName, setNewCourtName] = useState('');
+  const [sports, setSports] = useState([]);
+  const [centres, setCentres] = useState([]);
+  const [newCourt, setNewCourt] = useState({ name: '', sportId: '', centre: '' });
+  const [currentCentre, setCurrentCentre] = useState('');
   const [editCourtId, setEditCourtId] = useState(null);
   const [editCourtName, setEditCourtName] = useState('');
+  const LOCAL_centreId = localStorage.getItem('centreId'); // Get the centreId from localStorage
 
-  // Fetch all courts when the component loads
+  // Fetch data on component mount
   useEffect(() => {
-    const fetchCourts = async () => {
-      const data = await getCourts(); // Fetch courts from the API
-      setCourts(data || []); // Ensure courts is always an array, even if data is null
-    };
     fetchCourts();
+    fetchCentres();
+    if (LOCAL_centreId) {
+      handleCentreChange({ target: { value: LOCAL_centreId } }); // Auto-select centre from localStorage
+    }
   }, []);
 
-  // Handle adding a new court
-  const handleAddCourt = async () => {
-    if (newCourtName.trim()) {
-      try {
-        console.log("Adding court:", newCourtName); // Log the court name before API call
-
-        const newCourt = await addCourt({ name: newCourtName });
-        console.log("Court added:", newCourt); // Log the added court returned by the API
-
-        // Update courts list with the new court
-        setCourts([...courts, newCourt]); 
-        setNewCourtName(''); // Clear the input field
-      } catch (error) {
-        console.error("Error adding court:", error); // Log any error from the API
-      }
-    }
-  };
-
-  // Handle deleting a court
-  const handleDeleteCourt = async (courtId) => {
+  const fetchCourts = async () => {
     try {
-      await deleteCourt(courtId);
-      setCourts(courts.filter((court) => court && court._id !== courtId)); // Ensure court is not null
+      const data = await getAllCourts();
+      setCourts(data);
     } catch (error) {
-      console.error("Error deleting court:", error); // Log any error from the API
+      console.error('Error fetching courts:', error);
     }
   };
 
-  // Handle editing a court
-  const handleEditCourt = async () => {
-    if (editCourtName.trim()) {
-      try {
-        const updatedCourt = await updateCourt(editCourtId, { name: editCourtName });
-        setCourts(
-          courts.map((court) => court && court._id === editCourtId ? updatedCourt : court)
-        ); // Update the edited court
-        setEditCourtId(null); // Exit edit mode
-        setEditCourtName(''); // Clear the edit input field
-      } catch (error) {
-        console.error("Error updating court:", error); // Log any error from the API
+  const fetchSports = async (centreId) => {
+    try {
+      const data = await getAllSports(centreId); // Fetch sports by centreId
+      setSports(data);
+    } catch (error) {
+      console.error('Error fetching sports:', error);
+    }
+  };
+
+  const fetchCentres = async () => {
+    try {
+      const data = await getAllCentres();
+      setCentres(data);
+      const selectedCentre = data.find((centre) => centre._id === LOCAL_centreId);
+      if (selectedCentre) {
+        setCurrentCentre(selectedCentre.name); // Set the current centre name
       }
+    } catch (error) {
+      console.error('Error fetching centres:', error);
+    }
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setNewCourt((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleCentreChange = (e) => {
+    const centreId = e.target.value;
+    setNewCourt((prev) => ({ ...prev, centre: centreId }));
+    fetchSports(centreId); // Fetch sports for the selected centre
+    const selectedCentre = centres.find((centre) => centre._id === centreId);
+    if (selectedCentre) setCurrentCentre(selectedCentre.name); // Set the selected centre name
+  };
+
+  const handleAddCourt = async () => {
+    try {
+      if (!newCourt.name || !newCourt.sportId || !newCourt.centre) {
+        alert('All fields are required.');
+        return;
+      }
+      await addCourt(newCourt); // Add the court
+      fetchCourts(); // Refresh the courts list
+      setNewCourt({ name: '', sportId: '', centre: newCourt.centre }); // Reset form, retain selected centre
+    } catch (error) {
+      console.error('Error adding court:', error);
+    }
+  };
+
+  const handleEditCourt = async (id) => {
+    try {
+      await updateCourt(id, { name: editCourtName });
+      fetchCourts(); // Refresh the courts list
+      setEditCourtId(null); // Exit edit mode
+      setEditCourtName(''); // Clear edit input
+    } catch (error) {
+      console.error('Error updating court:', error);
+    }
+  };
+
+  const handleDeleteCourt = async (id) => {
+    try {
+      await deleteCourt(id);
+      fetchCourts(); // Refresh the courts list
+    } catch (error) {
+      console.error('Error deleting court:', error);
     }
   };
 
@@ -64,87 +104,117 @@ const ManageCourts = () => {
     <div className="p-4">
       <h2 className="text-2xl font-bold mb-4">Manage Courts</h2>
 
-      {/* Add New Court */}
+      {/* Current Centre Name */}
+      <div className="mb-6">
+        <p className="text-xl font-semibold">
+          Current Centre: <span className="text-gray-700">{currentCentre}</span>
+        </p>
+      </div>
+
+      {/* Add New Court Form */}
       <div className="mb-4">
         <input
           type="text"
-          value={newCourtName}
-          onChange={(e) => setNewCourtName(e.target.value)}
-          placeholder="Enter new court name"
-          className="p-2 border rounded-lg mr-2"
+          name="name"
+          value={newCourt.name}
+          onChange={handleInputChange}
+          placeholder="Court Name"
+          className="border p-2 mr-2"
         />
+        <select
+          name="centre"
+          value={newCourt.centre}
+          onChange={handleCentreChange}
+          className="border p-2 mr-2"
+        >
+          <option value="">Select Centre</option>
+          {centres.map((centre) => (
+            <option key={centre._id} value={centre._id}>
+              {centre.name}
+            </option>
+          ))}
+        </select>
+        <select
+          name="sportId"
+          value={newCourt.sportId}
+          onChange={handleInputChange}
+          className="border p-2"
+        >
+          <option value="">Select Sport</option>
+          {sports.map((sport) => (
+            <option key={sport._id} value={sport._id}>
+              {sport.name}
+            </option>
+          ))}
+        </select>
         <button
           onClick={handleAddCourt}
-          className="p-2 bg-blue-500 text-white rounded-lg"
-          disabled={!newCourtName.trim()} // Disable if no name entered
+          className="bg-blue-500 text-white p-2 ml-2 rounded"
+          disabled={!newCourt.name || !newCourt.sportId || !newCourt.centre} // Disable if form is incomplete
         >
           Add Court
         </button>
       </div>
 
-      {/* Display message if no courts are available */}
-      {courts.length === 0 ? (
-        <p className="text-gray-600">No courts available. Add a new court above.</p>
-      ) : (
-        /* Courts List */
-        <table className="min-w-full bg-white border border-gray-300">
-          <thead>
-            <tr>
-              <th className="border border-gray-300 p-2">Court ID</th>
-              <th className="border border-gray-300 p-2">Court Name</th>
-              <th className="border border-gray-300 p-2">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {courts.map((court) =>
-              court ? ( // Add a null check for each court before rendering it
-                <tr key={court._id}>
-                  <td className="border border-gray-300 p-2">{court._id}</td>
-                  <td className="border border-gray-300 p-2">
-                    {editCourtId === court._id ? (
-                      <input
-                        type="text"
-                        value={editCourtName}
-                        onChange={(e) => setEditCourtName(e.target.value)}
-                        className="p-2 border rounded-lg"
-                      />
-                    ) : (
-                      court.name
-                    )}
-                  </td>
-                  <td className="border border-gray-300 p-2">
-                    {editCourtId === court._id ? (
-                      <button
-                        onClick={handleEditCourt}
-                        className="p-2 bg-green-500 text-white rounded-lg mr-2"
-                        disabled={!editCourtName.trim()} // Disable if no name entered
-                      >
-                        Save
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => {
-                          setEditCourtId(court._id);
-                          setEditCourtName(court.name);
-                        }}
-                        className="p-2 bg-yellow-500 text-white rounded-lg mr-2"
-                      >
-                        Edit
-                      </button>
-                    )}
-                    <button
-                      onClick={() => handleDeleteCourt(court._id)}
-                      className="p-2 bg-red-500 text-white rounded-lg"
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              ) : null // Skip rendering if court is null
+      {/* Courts List */}
+      <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {courts.map((court) => (
+          <li
+            key={court._id}
+            className="bg-white shadow-md rounded-lg p-6 border border-gray-200 hover:shadow-lg transition duration-300"
+          >
+            {editCourtId === court._id ? (
+              <>
+                <input
+                  type="text"
+                  value={editCourtName}
+                  onChange={(e) => setEditCourtName(e.target.value)}
+                  className="border p-2 mb-4 w-full"
+                />
+                <button
+                  onClick={() => handleEditCourt(court._id)}
+                  className="bg-green-500 text-white px-4 py-2 rounded mr-2 hover:bg-green-600"
+                >
+                  Save
+                </button>
+                <button
+                  onClick={() => setEditCourtId(null)}
+                  className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+                >
+                  Cancel
+                </button>
+              </>
+            ) : (
+              <>
+                <h3 className="text-xl font-semibold mb-2">{court.name}</h3>
+                <p className="text-gray-600">
+                  <strong>Sport:</strong> {court.sportId?.name || 'N/A'}
+                </p>
+                <p className="text-gray-600 mb-4">
+                  <strong>Centre:</strong> {currentCentre || 'N/A'}
+                </p>
+                <div className="flex justify-between">
+                  <button
+                    onClick={() => {
+                      setEditCourtId(court._id);
+                      setEditCourtName(court.name);
+                    }}
+                    className="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 transition duration-300"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleDeleteCourt(court._id)}
+                    className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition duration-300"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </>
             )}
-          </tbody>
-        </table>
-      )}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 };
